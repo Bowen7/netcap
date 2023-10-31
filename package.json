@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node playground/index.ts"
+    "dev": "ts-node sandbox/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/node": "^20.8.9",
     "puppeteer": "^21.4.1",
+    "puppeteer-core": "^21.4.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   },
