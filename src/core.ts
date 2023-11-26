@@ -83,4 +83,28 @@ export class NetCap {
     this.status = 'recording'
     await this.startScreencast()
   }
+
+  async save(path: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      this.pass.end()
+      ffmpeg({
+        source: this.pass,
+        priority: 20
+      })
+        .videoCodec('libx264')
+        .size('100%')
+        .aspect('4:3')
+        .inputFormat('image2pipe')
+        .inputFPS(30)
+        .videoCodec('libx264')
+        .output(path)
+        .on('end', function () {
+          resolve()
+        })
+        .on('error', function (err) {
+          reject(err)
+        })
+        .run()
+    })
+  }
 }
