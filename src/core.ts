@@ -42,7 +42,7 @@ export class NetCap {
       console.error('NetCap is already started')
     }
     this.status = 'recording'
-    if (this.client !== null) {
+    if (this.client === null) {
       this.client = await this.page.target().createCDPSession()
     }
     this.pass = new PassThrough()
@@ -66,6 +66,7 @@ export class NetCap {
     }
     this.status = 'pending'
     await this.client?.send('Page.stopScreencast')
+    this.pass.end()
   }
 
   async pause(): Promise<void> {
@@ -86,7 +87,6 @@ export class NetCap {
 
   async save(path: string): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-      this.pass.end()
       ffmpeg({
         source: this.pass,
         priority: 20
@@ -102,6 +102,7 @@ export class NetCap {
           resolve()
         })
         .on('error', function (err) {
+          console.error(err)
           reject(err)
         })
         .run()
