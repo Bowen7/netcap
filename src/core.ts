@@ -9,15 +9,17 @@ ffmpeg.setFfmpegPath(ffmpegPath)
 interface Options {
   width?: number
   height?: number
+  fps?: number
 }
 
 const DEFAULT_OPTIONS: Options = {
   width: 1920,
-  height: 1080
+  height: 1080,
+  fps: 30
 }
 
 export class NetCap {
-  private status: 'pending' | 'recording' | 'paused' = 'pending'
+  private status: 'pending' | 'recording' = 'pending'
   page: Page
   options: Options
   session: CDPSession | null = null
@@ -73,24 +75,9 @@ export class NetCap {
     await this.session?.send('Page.stopScreencast')
   }
 
-  async pause(): Promise<void> {
-    if (this.status !== 'recording') {
-      console.error('NetCap is not recording')
-    }
-    this.status = 'paused'
-    await this.session?.send('Page.stopScreencast')
-  }
-
-  async resume(): Promise<void> {
-    if (this.status !== 'paused') {
-      console.error('NetCap is not paused')
-    }
-    this.status = 'recording'
-    await this.startScreenCast()
-  }
-
   async save(path: string): Promise<void> {
-    const passThrough = mergeFrames(this.frames)
+    const { fps } = this.options
+    const passThrough = mergeFrames(this.frames, fps)
     await new Promise<void>((resolve, reject) => {
       ffmpeg({
         source: passThrough,
@@ -100,7 +87,7 @@ export class NetCap {
         .size('100%')
         .aspect('4:3')
         .inputFormat('image2pipe')
-        .inputFPS(30)
+        .inputFPS(fps)
         .videoCodec('libx264')
         .output(path)
         .on('end', function () {

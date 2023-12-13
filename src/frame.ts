@@ -1,6 +1,8 @@
 import { PassThrough } from 'node:stream'
 import { type ScreenCastFrame } from './types'
 
+// CDP doesn't send every frame; it only sends the frame that is different from the previous one
+// So, we need to fill in the missing frames
 export const mergeFrames = (
   frames: ScreenCastFrame[],
   fps = 30
