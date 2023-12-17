@@ -22,7 +22,7 @@ export class NetCap {
   private status: 'pending' | 'recording' = 'pending'
   page: Page
   options: Options
-  session: CDPSession | null = null
+  client: CDPSession | null = null
   frames: ScreenCastFrame[] = []
   constructor(page: Page, options: Options = {}) {
     this.page = page
@@ -31,7 +31,7 @@ export class NetCap {
 
   private async startScreenCast(): Promise<void> {
     const { width, height } = this.options
-    return await this.session?.send('Page.startScreencast', {
+    return await this.client?.send('Page.startScreencast', {
       format: 'jpeg',
       quality: 100,
       maxWidth: width,
@@ -45,18 +45,18 @@ export class NetCap {
       console.error('NetCap is already started')
     }
     this.status = 'recording'
-    if (this.session === null) {
-      this.session = await this.page.target().createCDPSession()
+    if (this.client === null) {
+      this.client = await this.page.target().createCDPSession()
     }
     this.frames = []
-    this.session?.on('Page.screencastFrame', (frameObject) => {
+    this.client?.on('Page.screencastFrame', (frameObject) => {
       const buff = Buffer.from(frameObject.data, 'base64')
       this.frames.push({
         buffer: buff,
         timestamp: frameObject.metadata.timestamp ?? Date.now() / 1000000
       })
 
-      this.session
+      this.client
         ?.send('Page.screencastFrameAck', {
           sessionId: frameObject.sessionId
         })
@@ -72,7 +72,7 @@ export class NetCap {
       console.error('NetCap is not recording')
     }
     this.status = 'pending'
-    await this.session?.send('Page.stopScreencast')
+    await this.client?.send('Page.stopScreencast')
   }
 
   async save(path: string): Promise<void> {
