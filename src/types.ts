@@ -10,3 +10,9 @@ export type Cursors = Record<
     offset?: [number, number]
   }
 >
+
+export interface RecorderOptions {
+  width?: number
+  height?: number
+  fps?: number
+}

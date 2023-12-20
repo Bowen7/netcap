@@ -1,26 +1,35 @@
 import puppeteer from 'puppeteer'
 import { resolve } from 'node:path'
-import { NetCap } from '../src'
+import { Recorder } from '../src/recorder'
+import { enableMouse } from '../src/preload/mouse'
 
 const width = 1920
 const height = 1080
 
-const later = async (delay): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, delay))
-}
+// const later = async (delay): Promise<void> => {
+//   await new Promise((resolve) => setTimeout(resolve, delay))
+// }
 
 const main = async (): Promise<void> => {
   const browser = await puppeteer.launch()
   const page = await browser.newPage()
   await page.setViewport({ width, height, deviceScaleFactor: 1 })
-  await page.goto('https://fanyi.baidu.com/')
+  await enableMouse(page)
+  await page.goto('https://developer.mozilla.org/en-US/docs/Web/CSS/animation')
 
-  const netCap = new NetCap(page, { width, height })
-  await netCap.start()
-  await later(5000)
-  await netCap.stop()
+  const client = await page.target().createCDPSession()
+  const recorder = new Recorder(client, { width, height })
+  await recorder.start()
+  console.time('recording')
+  await page.mouse.move(100, 100)
+  await page.mouse.move(400, 400, { steps: 200 })
+  await page.mouse.move(0, 0, { steps: 20 })
+  console.timeEnd('recording')
+  await recorder.stop()
   await browser.close()
-  await netCap.save(resolve(__dirname, '../dist/output.mp4'))
+  await recorder.save(resolve(__dirname, '../dist/output.mp4'))
 }
 
-void main()
+main().catch((error) => {
+  console.error(error)
+})

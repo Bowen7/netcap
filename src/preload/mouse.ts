@@ -150,7 +150,6 @@ export const enableMouse = async (page: Page): Promise<void> => {
         const container = createCursorContainer()
 
         document.addEventListener('mousemove', (event) => {
-          console.log(event.clientX, event.clientY)
           latestMouseEvent = event
         })
 
