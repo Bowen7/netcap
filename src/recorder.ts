@@ -2,7 +2,7 @@ import { type CDPSession } from 'puppeteer'
 import ffmpeg from 'fluent-ffmpeg'
 import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg'
 import { mergeFrames } from './frame'
-import { type ScreenCastFrame, type RecorderOptions } from './types'
+import { type RecorderOptions, type DataCollectedEvent } from './types'
 
 ffmpeg.setFfmpegPath(ffmpegPath)
 
@@ -11,21 +11,14 @@ const DEFAULT_OPTIONS: RecorderOptions = {
   height: 1080,
   fps: 30
 }
-
-const STOP_DELAY_TIME = 0.5
-
-const getTimestamp = (): number => Date.now() / 1000
-
-const later = async (delay): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, delay))
-}
 export class Recorder {
   private readonly options: RecorderOptions
   private readonly client: CDPSession
-  private status: 'pending' | 'recording' = 'pending'
-  private frames: ScreenCastFrame[] = []
-  private stopTimestamp: number = 0
-  private recordPromise: Promise<void> | null = null
+  private isRecording = false
+  private buffers: Buffer[] = []
+  private timeline: number[] = []
+  private tracingPromise: Promise<void> | null = null
+  private screencastPromise: Promise<void> | null = null
   constructor(client: CDPSession, options: RecorderOptions = {}) {
     this.client = client
     this.options = { ...DEFAULT_OPTIONS, ...options }
@@ -42,16 +35,26 @@ export class Recorder {
     })
   }
 
-  async start(): Promise<void> {
-    if (this.status !== 'pending') {
-      console.error('Recorder is already started')
-    }
-    this.status = 'recording'
-    this.frames = []
+  private bindEvents(): void {
+    this.client?.on(
+      'Tracing.dataCollected',
+      ({ value: payloads }: DataCollectedEvent): void => {
+        for (const payload of payloads) {
+          if (payload.cat === 'disabled-by-default-devtools.screenshot') {
+            this.timeline.push(payload.ts)
+          }
+        }
+      }
+    )
 
-    this.recordPromise = new Promise((resolve) => {
-      this.client?.on('Page.screencastFrame', (frameObject) => {
-        const timestamp = frameObject.metadata.timestamp ?? getTimestamp()
+    this.tracingPromise = new Promise((resolve) => {
+      this.client?.on('Tracing.tracingComplete', (): void => {
+        resolve()
+      })
+    })
+
+    this.screencastPromise = new Promise((resolve) => {
+      this.client?.on('Page.screencastFrame', (frameObject): void => {
         this.client
           ?.send('Page.screencastFrameAck', {
             sessionId: frameObject.sessionId
@@ -59,36 +62,65 @@ export class Recorder {
           .catch((err) => {
             console.error(err)
           })
-
-        if (this.status === 'pending' && this.stopTimestamp < timestamp) {
-          resolve()
-          return
-        }
-
         const buff = Buffer.from(frameObject.data, 'base64')
-        this.frames.push({
-          buffer: buff,
-          timestamp
-        })
+        this.buffers.push(buff)
+        if (
+          !this.isRecording &&
+          this.timeline.length > 0 &&
+          this.buffers.length >= this.timeline.length
+        ) {
+          resolve()
+        }
       })
     })
+  }
+
+  private async unbindEvents(): Promise<void> {
+    this.client?.removeAllListeners()
+  }
+
+  private async startTracing(): Promise<void> {
+    await this.client?.send('Tracing.start', {
+      traceConfig: {
+        includedCategories: ['disabled-by-default-devtools.screenshot'],
+        excludedCategories: ['*']
+      },
+      transferMode: 'ReportEvents'
+    })
+  }
+
+  private async endTracing(): Promise<void> {
+    await this.client?.send('Tracing.end')
+  }
+
+  async start(): Promise<void> {
+    if (this.isRecording) {
+      console.error('Recorder is already started')
+    }
+    this.isRecording = true
+    this.buffers = []
+    this.timeline = []
+    this.bindEvents()
+
+    await this.startTracing()
     await this.startScreenCast()
   }
 
   async stop(): Promise<void> {
-    if (this.status !== 'recording') {
+    if (!this.isRecording) {
       console.error('Recorder is not recording')
     }
-    this.status = 'pending'
-    this.stopTimestamp = getTimestamp() + STOP_DELAY_TIME
-    await this.recordPromise
-    await later(1000)
+    this.isRecording = false
+    await this.endTracing()
+    await this.tracingPromise
+    await this.screencastPromise
+    await this.unbindEvents()
     await this.client?.send('Page.stopScreencast')
   }
 
   async save(path: string): Promise<void> {
     const { fps } = this.options
-    const passThrough = mergeFrames(this.frames, fps)
+    const passThrough = mergeFrames(this.buffers, this.timeline, fps)
     await new Promise<void>((resolve, reject) => {
       ffmpeg({
         source: passThrough,
