@@ -11,6 +11,9 @@ export const mergeFrames = (
   for (let i = 0; i < timeline.length; i++) {
     const ts = timeline[i]
     const buffer = buffers[i]
+    if (!buffer) {
+      break
+    }
     if (i === timeline.length - 1) {
       result.write(buffer)
     } else {
