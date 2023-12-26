@@ -41,7 +41,8 @@ export class Recorder {
       ({ value: payloads }: DataCollectedEvent): void => {
         for (const payload of payloads) {
           if (payload.cat === 'disabled-by-default-devtools.screenshot') {
-            this.timeline.push(payload.ts)
+            // convert microsecond to millisecond
+            this.timeline.push(payload.ts / 1000)
           }
         }
       }
@@ -110,9 +111,9 @@ export class Recorder {
     if (!this.isRecording) {
       console.error('Recorder is not recording')
     }
-    this.isRecording = false
     await this.endTracing()
     await this.tracingPromise
+    this.isRecording = false
     await this.screencastPromise
     await this.unbindEvents()
     await this.client?.send('Page.stopScreencast')
