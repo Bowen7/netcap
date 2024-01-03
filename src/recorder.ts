@@ -1,4 +1,4 @@
-import { type CDPSession } from 'puppeteer'
+import type { CDPSession, Page } from 'puppeteer'
 import ffmpeg from 'fluent-ffmpeg'
 import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg'
 import { mergeFrames } from './frame'
@@ -11,28 +11,19 @@ const DEFAULT_OPTIONS: RecorderOptions = {
   height: 1080,
   fps: 30
 }
+
 export class Recorder {
   private readonly options: RecorderOptions
-  private readonly client: CDPSession
+  private readonly page: Page
+  private client: CDPSession
   private isRecording = false
   private buffers: Buffer[] = []
   private timeline: number[] = []
   private tracingPromise: Promise<void> | null = null
   private screencastPromise: Promise<void> | null = null
-  constructor(client: CDPSession, options: RecorderOptions = {}) {
-    this.client = client
+  constructor(page: Page, options: RecorderOptions = {}) {
+    this.page = page
     this.options = { ...DEFAULT_OPTIONS, ...options }
-  }
-
-  private async startScreenCast(): Promise<void> {
-    const { width, height } = this.options
-    await this.client?.send('Page.startScreencast', {
-      format: 'jpeg',
-      quality: 100,
-      maxWidth: width,
-      maxHeight: height,
-      everyNthFrame: 1
-    })
   }
 
   private bindEvents(): void {
@@ -90,6 +81,17 @@ export class Recorder {
     })
   }
 
+  private async startScreenCast(): Promise<void> {
+    const { width, height } = this.options
+    await this.client?.send('Page.startScreencast', {
+      format: 'jpeg',
+      quality: 100,
+      maxWidth: width,
+      maxHeight: height,
+      everyNthFrame: 1
+    })
+  }
+
   private async endTracing(): Promise<void> {
     await this.client?.send('Tracing.end')
   }
@@ -98,6 +100,7 @@ export class Recorder {
     if (this.isRecording) {
       console.error('Recorder is already started')
     }
+    this.client = await this.page.target().createCDPSession()
     this.isRecording = true
     this.buffers = []
     this.timeline = []
@@ -111,12 +114,16 @@ export class Recorder {
     if (!this.isRecording) {
       console.error('Recorder is not recording')
     }
+    const movePromise = this.page.waitForFunction(
+      'window.__cursor_move_finished'
+    )
+    await movePromise
     await this.endTracing()
     await this.tracingPromise
     this.isRecording = false
     await this.screencastPromise
-    await this.unbindEvents()
     await this.client?.send('Page.stopScreencast')
+    await this.unbindEvents()
   }
 
   async save(path: string): Promise<void> {

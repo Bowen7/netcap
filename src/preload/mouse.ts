@@ -2,6 +2,12 @@
 import { type Page } from 'puppeteer'
 import { type Cursors } from '../types'
 
+declare global {
+  interface Window {
+    __cursor_move_finished: any
+  }
+}
+
 // from https://www.figma.com/community/file/905067239318782670
 const cursors: Cursors = {
   default: {
@@ -149,12 +155,18 @@ export const enableMouse = async (page: Page): Promise<void> => {
 
         const container = createCursorContainer()
 
-        document.addEventListener('mousemove', (event) => {
-          latestMouseEvent = event
-        })
+        document.addEventListener(
+          'mousemove',
+          (event) => {
+            latestMouseEvent = event
+          },
+          true
+        )
 
         const rafCallback = (): void => {
+          requestAnimationFrame(rafCallback)
           if (latestMouseEvent && latestMouseEvent !== prevMouseEvent) {
+            window.__cursor_move_finished = false
             prevMouseEvent = latestMouseEvent
             moveCursor(container, latestMouseEvent)
             const cursorType = getCursorType(latestMouseEvent)
@@ -162,8 +174,9 @@ export const enableMouse = async (page: Page): Promise<void> => {
               setCursorStyle(container, cursorType)
               latestCursorType = cursorType
             }
+          } else {
+            window.__cursor_move_finished = true
           }
-          requestAnimationFrame(rafCallback)
         }
         rafCallback()
       })

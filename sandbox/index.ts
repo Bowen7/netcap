@@ -17,8 +17,7 @@ const main = async (): Promise<void> => {
   await enableMouse(page)
   await page.goto('https://developer.mozilla.org/en-US/docs/Web/CSS/animation')
 
-  const client = await page.target().createCDPSession()
-  const recorder = new Recorder(client, { width, height })
+  const recorder = new Recorder(page, { width, height })
   await recorder.start()
   console.time('recording')
   await page.mouse.move(100, 100)
