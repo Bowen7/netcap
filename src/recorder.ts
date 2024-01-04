@@ -115,7 +115,7 @@ export class Recorder {
       console.error('Recorder is not recording')
     }
     const movePromise = this.page.waitForFunction(
-      'window.__cursor_move_finished'
+      'window._cursor_move_finished === true'
     )
     await movePromise
     await this.endTracing()

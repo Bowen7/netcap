@@ -4,7 +4,7 @@ import { type Cursors } from '../types'
 
 declare global {
   interface Window {
-    __cursor_move_finished: any
+    _cursor_move_finished: boolean
   }
 }
 
@@ -166,7 +166,7 @@ export const enableMouse = async (page: Page): Promise<void> => {
         const rafCallback = (): void => {
           requestAnimationFrame(rafCallback)
           if (latestMouseEvent && latestMouseEvent !== prevMouseEvent) {
-            window.__cursor_move_finished = false
+            window._cursor_move_finished = false
             prevMouseEvent = latestMouseEvent
             moveCursor(container, latestMouseEvent)
             const cursorType = getCursorType(latestMouseEvent)
@@ -175,7 +175,7 @@ export const enableMouse = async (page: Page): Promise<void> => {
               latestCursorType = cursorType
             }
           } else {
-            window.__cursor_move_finished = true
+            window._cursor_move_finished = true
           }
         }
         rafCallback()
