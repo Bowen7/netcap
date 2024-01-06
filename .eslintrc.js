@@ -24,6 +24,7 @@ module.exports = {
     '@typescript-eslint/space-before-function-paren': 'off',
     '@typescript-eslint/strict-boolean-expressions': 'off',
     '@typescript-eslint/triple-slash-reference': 'off',
-    '@typescript-eslint/indent': 'off'
+    '@typescript-eslint/indent': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off'
   }
 }

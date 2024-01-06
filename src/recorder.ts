@@ -1,8 +1,13 @@
-import type { CDPSession, Page } from 'puppeteer'
+import type { CDPSession, Page, Viewport } from 'puppeteer'
+import type { Protocol } from 'devtools-protocol'
 import ffmpeg from 'fluent-ffmpeg'
 import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg'
 import { mergeFrames } from './frame'
-import { type RecorderOptions, type DataCollectedEvent } from './types'
+import type {
+  RecorderStatus,
+  RecorderOptions,
+  DataCollectedEvent
+} from './types'
 
 ffmpeg.setFfmpegPath(ffmpegPath)
 
@@ -15,8 +20,8 @@ const DEFAULT_OPTIONS: RecorderOptions = {
 export class Recorder {
   private readonly options: RecorderOptions
   private readonly page: Page
+  private status: RecorderStatus = 'uninitialized'
   private client: CDPSession
-  private isRecording = false
   private buffers: Buffer[] = []
   private timeline: number[] = []
   private tracingPromise: Promise<void> | null = null
@@ -24,6 +29,59 @@ export class Recorder {
   constructor(page: Page, options: RecorderOptions = {}) {
     this.page = page
     this.options = { ...DEFAULT_OPTIONS, ...options }
+  }
+
+  public async init(): Promise<void> {
+    this.status = 'initialized'
+    this.client = await this.page.target().createCDPSession()
+
+    // If use the headless mode, the client doesn't extend the page viewport
+    // So we need to set the viewport manually
+    const viewport: Viewport = this.page.viewport() ?? { width: 0, height: 0 }
+    const {
+      hasTouch = false,
+      isMobile = false,
+      deviceScaleFactor = 1,
+      width,
+      height,
+      isLandscape
+    } = viewport
+
+    const screenOrientation: Protocol.Emulation.ScreenOrientation = isLandscape
+      ? { angle: 90, type: 'landscapePrimary' }
+      : { angle: 0, type: 'portraitPrimary' }
+    await Promise.all([
+      this.client.send('Emulation.setDeviceMetricsOverride', {
+        mobile: isMobile,
+        width,
+        height,
+        deviceScaleFactor,
+        screenOrientation
+      }),
+      this.client.send('Emulation.setTouchEmulationEnabled', {
+        enabled: hasTouch
+      })
+    ])
+  }
+
+  async start(): Promise<void> {
+    if (this.status !== 'uninitialized' && this.status !== 'initialized') {
+      return
+    }
+    if (this.status === 'uninitialized') {
+      await this.init()
+    }
+    this.status = 'recording'
+    this.buffers = []
+    this.timeline = []
+    this.bindEvents()
+
+    await this.startTracing()
+    await this.startScreenCast()
+  }
+
+  private async endTracing(): Promise<void> {
+    await this.client?.send('Tracing.end')
   }
 
   private bindEvents(): void {
@@ -57,7 +115,7 @@ export class Recorder {
         const buff = Buffer.from(frameObject.data, 'base64')
         this.buffers.push(buff)
         if (
-          !this.isRecording &&
+          this.status === 'completed' &&
           this.timeline.length > 0 &&
           this.buffers.length >= this.timeline.length
         ) {
@@ -92,35 +150,14 @@ export class Recorder {
     })
   }
 
-  private async endTracing(): Promise<void> {
-    await this.client?.send('Tracing.end')
-  }
-
-  async start(): Promise<void> {
-    if (this.isRecording) {
-      console.error('Recorder is already started')
-    }
-    this.client = await this.page.target().createCDPSession()
-    this.isRecording = true
-    this.buffers = []
-    this.timeline = []
-    this.bindEvents()
-
-    await this.startTracing()
-    await this.startScreenCast()
-  }
-
   async stop(): Promise<void> {
-    if (!this.isRecording) {
-      console.error('Recorder is not recording')
-    }
+    this.status = 'completed'
     const movePromise = this.page.waitForFunction(
       'window._cursor_move_finished === true'
     )
     await movePromise
     await this.endTracing()
     await this.tracingPromise
-    this.isRecording = false
     await this.screencastPromise
     await this.client?.send('Page.stopScreencast')
     await this.unbindEvents()

@@ -8,11 +8,11 @@ export const mergeFrames = (
   timeline: number[],
   fps = 30
 ): PassThrough => {
-  // console.log(
-  //   buffers.length,
-  //   timeline.length,
-  //   timeline[timeline.length - 1] - timeline[0]
-  // )
+  console.log(
+    buffers.length,
+    timeline.length,
+    timeline[timeline.length - 1] - timeline[0]
+  )
   const result = new PassThrough()
   const frameDuration = 1000 / fps
   const length = Math.min(buffers.length, timeline.length)

@@ -38,3 +38,9 @@ export interface DataCollectedPayload {
 export interface DataCollectedEvent {
   value: DataCollectedPayload[]
 }
+
+export type RecorderStatus =
+  | 'uninitialized'
+  | 'initialized'
+  | 'recording'
+  | 'completed'
