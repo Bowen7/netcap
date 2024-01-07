@@ -17,6 +17,9 @@ const DEFAULT_OPTIONS: RecorderOptions = {
   fps: 30
 }
 
+// Unlike Puppeteer, we don't use `frameObject.data.timestamp` from the `Page.screencastFrame` event. It is not accurate.
+// It is the timestamp when the frame is sent to the client, not the timestamp when the frame is captured.
+// Instead, we use the ts from Tracing disabled-by-default-devtools.screenshot event
 export class Recorder {
   private readonly options: RecorderOptions
   private readonly page: Page
@@ -64,6 +67,8 @@ export class Recorder {
     ])
   }
 
+  // We should call `init()` when calling `start()` for the first time.
+  // Also, allow the developer to call `init()` manually.
   async start(): Promise<void> {
     if (this.status !== 'uninitialized' && this.status !== 'initialized') {
       return
@@ -152,6 +157,7 @@ export class Recorder {
 
   async stop(): Promise<void> {
     this.status = 'completed'
+    // We need to wait for the cursor movement to finish
     const movePromise = this.page.waitForFunction(
       'window._cursor_move_finished === true'
     )
@@ -166,6 +172,7 @@ export class Recorder {
   async save(path: string): Promise<void> {
     const { fps } = this.options
     const passThrough = mergeFrames(this.buffers, this.timeline, fps)
+    // TODO: more options
     await new Promise<void>((resolve, reject) => {
       ffmpeg({
         source: passThrough,
