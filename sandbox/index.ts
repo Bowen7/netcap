@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer'
 import { resolve } from 'node:path'
 import { Recorder } from '../src/recorder'
-import { enableMouse } from '../src/preload/mouse'
+import { enableCursor } from '../src/preload/mouse'
 
 const width = 1920
 const height = 1080
@@ -14,7 +14,7 @@ const main = async (): Promise<void> => {
   const browser = await puppeteer.launch({ headless: 'new' })
   const page = await browser.newPage()
   await page.setViewport({ width, height, deviceScaleFactor: 1 })
-  await enableMouse(page)
+  await enableCursor(page)
   await page.goto('https://developer.mozilla.org/en-US/docs/Web/CSS/animation')
 
   const recorder = new Recorder(page, { width, height })

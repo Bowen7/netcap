@@ -1,14 +1,14 @@
 import { type CDPSession } from 'puppeteer'
 
-export interface PinchZoomOptions {
+export interface ZoomOptions {
   x: number
   y: number
   scale: number
   speed?: number
 }
-export const pinchZoom = async (
+export const zoom = async (
   client: CDPSession,
-  { x, y, scale, speed }: PinchZoomOptions
+  { x, y, scale, speed }: ZoomOptions
 ): Promise<void> => {
   await client.send('Input.synthesizePinchGesture', {
     x,
