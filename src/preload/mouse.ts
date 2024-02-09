@@ -5,11 +5,6 @@ import { type Cursors } from '../types'
 export interface CursorOptions {
   cursorScale?: number
 }
-declare global {
-  interface Window {
-    _cursor_move_finished: boolean
-  }
-}
 
 // from https://www.figma.com/community/file/905067239318782670
 const cursors: Cursors = {
@@ -184,7 +179,6 @@ export const enableCursor = async (
           const rafCallback = (): void => {
             requestAnimationFrame(rafCallback)
             if (latestMouseEvent && latestMouseEvent !== prevMouseEvent) {
-              window._cursor_move_finished = false
               prevMouseEvent = latestMouseEvent
               moveCursor(container, latestMouseEvent)
               const cursorType = getCursorType(latestMouseEvent)
@@ -192,8 +186,6 @@ export const enableCursor = async (
                 setCursorStyle(container, cursorType)
                 latestCursorType = cursorType
               }
-            } else {
-              window._cursor_move_finished = true
             }
           }
           rafCallback()

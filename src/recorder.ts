@@ -157,11 +157,6 @@ export class Recorder {
 
   async stop(): Promise<void> {
     this.status = 'completed'
-    // We need to wait for the cursor movement to finish
-    const movePromise = this.page.waitForFunction(
-      'window._cursor_move_finished === true'
-    )
-    await movePromise
     await this.endTracing()
     await this.tracingPromise
     await this.screencastPromise
