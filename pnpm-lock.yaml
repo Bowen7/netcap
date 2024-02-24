@@ -8,6 +8,9 @@ dependencies:
   '@ffmpeg-installer/ffmpeg':
     specifier: ^1.1.0
     version: 1.1.0
+  '@qiwi/deep-proxy':
+    specifier: ^2.0.3
+    version: 2.0.3
   fluent-ffmpeg:
     specifier: ^2.1.2
     version: 2.1.2
@@ -272,6 +275,12 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /@qiwi/deep-proxy@2.0.3:
+    resolution: {integrity: sha512-PHePQH7+rGIIHqmXSAYr5hCFDfeIlPheb/60hAH8RuOGoNbODhnuYedR4b2HleDmgqBegMlnpp8EqQyZM9Cl7w==}
+    dependencies:
+      tslib: 2.6.2
+    dev: false
 
   /@tootallnate/quickjs-emscripten@0.23.0:
     resolution: {integrity: sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==}
@@ -2399,7 +2408,6 @@ packages:
 
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
-    dev: true
 
   /type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
