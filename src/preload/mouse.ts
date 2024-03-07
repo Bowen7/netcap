@@ -6,6 +6,13 @@ export interface CursorOptions {
   cursorScale?: number
 }
 
+declare global {
+  interface Window {
+    _cursorX: number
+    _cursorY: number
+  }
+}
+
 // from https://www.figma.com/community/file/905067239318782670
 const cursors: Cursors = {
   default: {
@@ -79,6 +86,9 @@ export const enableCursor = async (
   const { cursorScale = 1 } = options
   await page.evaluateOnNewDocument(
     ({ cursors, cursorScale }: CursorFuncArgs) => {
+      window._cursorX = 0
+      window._cursorY = 0
+
       const isPointInRect = (
         point: [number, number],
         rect: DOMRect
@@ -95,6 +105,8 @@ export const enableCursor = async (
         const { clientX: x, clientY: y } = event
         cursorContainer.style.left = `${x}px`
         cursorContainer.style.top = `${y}px`
+        window._cursorX = x
+        window._cursorY = y
       }
 
       const getCursorType = (event: MouseEvent): string => {
@@ -193,5 +205,15 @@ export const enableCursor = async (
       }
     },
     { cursors, cursorScale }
+  )
+}
+
+export const waitForMouse = async (
+  page: Page,
+  x: number,
+  y: number
+): Promise<void> => {
+  await page.waitForFunction(
+    () => window._cursorX === x && window._cursorY === y
   )
 }
