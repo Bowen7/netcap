@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer'
 import { resolve } from 'node:path'
+import process from 'node:process'
 import { Recorder } from '../src/recorder'
 import { enableCursor } from '../src/preload/mouse'
 
@@ -26,7 +27,7 @@ const main = async (): Promise<void> => {
   console.timeEnd('recording')
   await recorder.stop()
   await browser.close()
-  await recorder.save(resolve(__dirname, '../dist/output.mp4'))
+  await recorder.save(resolve(process.cwd(), './dist/output.mp4'))
 }
 
 main().catch((error) => {
