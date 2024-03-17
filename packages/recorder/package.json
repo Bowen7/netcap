@@ -1,0 +1,22 @@
+{
+  "name": "@vtape/recorder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsup-node sandbox/index.ts --loader \".svg=text\" --onSuccess \"node dist/index.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "devtools-protocol": "^0.0.1239539",
+    "puppeteer": "^21.4.1",
+    "puppeteer-core": "^21.4.1"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "fluent-ffmpeg": "^2.1.2"
+  }
+}
