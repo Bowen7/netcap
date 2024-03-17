@@ -13,7 +13,10 @@
   "devDependencies": {
     "devtools-protocol": "^0.0.1239539",
     "puppeteer": "^21.4.1",
-    "puppeteer-core": "^21.4.1"
+    "puppeteer-core": "^21.4.1",
+    "tsconfig": "workspace:*",
+    "eslint-config-custom": "workspace:*",
+    "eslint": "^8.0.1"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
