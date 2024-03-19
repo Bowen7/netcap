@@ -1,11 +1,11 @@
 {
-  "name": "@vtape/recorder",
+  "name": "@vtape/effects",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsup"
+    "dev": "tsup-node sandbox/index.ts --loader \".svg=text\" -- noExternal /@vtape/ --onSuccess \"node dist/index.js\""
   },
   "keywords": [],
   "author": "",
@@ -16,7 +16,6 @@
     "puppeteer-core": "^21.4.1",
     "tsconfig": "workspace:*",
     "eslint-config-custom": "workspace:*",
-    "@vtape/effects": "workspace:*",
     "eslint": "^8.0.1"
   },
   "dependencies": {
