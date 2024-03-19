@@ -1,7 +1,7 @@
 import { type Page } from 'puppeteer'
-import defaultSvg from '../assets/cursors/default.svg'
-import pointerSvg from '../assets/cursors/pointer.svg'
-import textSvg from '../assets/cursors/text.svg'
+import defaultSvg from './assets/cursors/default.svg'
+import pointerSvg from './assets/cursors/pointer.svg'
+import textSvg from './assets/cursors/text.svg'
 
 type Cursors = Record<
   string,
